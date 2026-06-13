@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Public Toilet Analytics Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body { font-family: Arial, sans-serif; background-color: #f4f6f9; text-align: center; margin: 0; padding: 20px; }
+        .container { max-width: 900px; margin: auto; background: white; padding: 20px; border-radius: 10px; box-shadow: 0px 4px 10px rgba(0,0,0,0.1); }
+        .grid { display: flex; justify-content: space-around; flex-wrap: wrap; margin-top: 30px; }
+        .card { width: 180px; padding: 20px; margin: 10px; border-radius: 8px; border: 2px solid #ccc; transition: 0.3s; }
+        .FREE { background-color: #d4edda; color: #155724; border-color: #c3e6cb; }
+        .BUSY { background-color: #f8d7da; color: #721c24; border-color: #f5c6cb; }
+        .btn { display: inline-block; padding: 10px 20px; margin-top: 15px; text-decoration: none; border-radius: 5px; font-weight: bold; cursor: pointer; }
+        .btn-toggle { background: #007bff; color: white; border: none; }
+        .btn-report { background: #28a745; color: white; padding: 12px 25px; margin-top: 30px; font-size: 16px; }
+        .chart-section { max-width: 800px; margin: 40px auto 20px auto; padding: 20px; border-top: 2px dashed #ddd; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>Smart Public Toilet Occupancy Display</h1>
+    <p>Real-time status tracking & traffic analysis</p>
+
+    <div class="grid">
+        {% for toilet in toilets %}
+        <div class="card {% if toilet.is_occupied %}BUSY{% else %}FREE{% endif %}">
+            <h3>Toilet {{ toilet.toilet_id }}</h3>
+            <h2>{% if toilet.is_occupied %}OCCUPIED{% else %}AVAILABLE{% endif %}</h2>
+            <form action="{% url 'toggle_status' toilet.toilet_id %}" method="POST">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-toggle">Simulate Sensor</button>
+            </form>
+        </div>
+        {% endfor %}
+    </div>
+
+    <div class="chart-section">
+        <h2>Weekly Traffic Analytics (Peak Usage)</h2>
+        <p>Total recorded entries per day over the current week cycle</p>
+        <canvas id="weeklyPeakChart" width="400" height="170"></canvas>
+    </div>
+
+    <a href="{% url 'generate_pdf' %}" class="btn btn-report" target="_blank">Generate PDF Report</a>
+</div>
+
+<script>
+    // Configures and instantiates the Bar Graph layout inside the canvas element
+    const ctx = document.getElementById('weeklyPeakChart').getContext('2d');
+    const weeklyPeakChart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: {{ weekly_labels|safe }},
+            datasets: [{
+                label: 'Total Recorded Entries',
+                data: {{ weekly_data|safe }},
+                backgroundColor: 'rgba(0, 123, 255, 0.6)',
+                borderColor: 'rgba(0, 123, 255, 1)',
+                borderWidth: 1.5,
+                borderRadius: 4
+            }]
+        },
+        options: {
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    title: { display: true, text: 'Number of Daily Uses' }
+                },
+                x: {
+                    title: { display: true, text: 'Days of the Week' }
+                }
+            },
+            plugins: {
+                legend: { display: false }
+            }
+        }
+    });
+</script>
+
+</body>
+</html>
